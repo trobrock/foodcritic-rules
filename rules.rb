@@ -25,7 +25,7 @@ rule "ETSY002", "Execute resource used to run git commands" do
     find_resources(ast, :type => 'execute').find_all do |cmd|
       cmd_str = (resource_attribute(cmd, 'command') || resource_name(cmd)).to_s
 
-      matches = cmd_str.match /git [a-z\-]+/i
+      matches = cmd_str.match /git ([a-z\-]+)/i
       next if matches.nil?
       git_cmd = matches.captures.first
       !@impossible_git_commands.include?(git_cmd)
