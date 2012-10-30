@@ -1,7 +1,8 @@
 #Etsy Foodcritic rules
-@coreservices = ["httpd", "mysql", "memcached", "postgresql-server"]
-@coreservicepackages = ["httpd", "Percona-Server-server-51", "memcached", "postgresql-server"]
-@corecommands = ["yum -y", "yum install", "yum reinstall", "yum remove", "mkdir", "useradd", "usermod", "touch"]
+@coreservices            = ["httpd", "mysql", "memcached", "postgresql-server"]
+@coreservicepackages     = ["httpd", "Percona-Server-server-51", "memcached", "postgresql-server"]
+@corecommands            = ["yum -y", "yum install", "yum reinstall", "yum remove", "mkdir", "useradd", "usermod", "touch"]
+@impossible_git_commands = ["show"]
 
 rule "ETSY001", "Package or yum_package resource used with :upgrade action" do
   tags %w{correctness recipe etsy}
@@ -21,10 +22,13 @@ end
 rule "ETSY002", "Execute resource used to run git commands" do
   tags %w{style recipe etsy}
   recipe do |ast|
-    pres = find_resources(ast, :type => 'execute').find_all do |cmd|
+    find_resources(ast, :type => 'execute').find_all do |cmd|
       cmd_str = (resource_attribute(cmd, 'command') || resource_name(cmd)).to_s
-      cmd_str.include?('git ')
-    end.map{|cmd| match(cmd)}
+
+      matches = cmd_str.match /git [a-z\-]+/i
+      git_cmd = matches.captures.first
+      !@impossible_git_commands.include?(git_cmd)
+    end.map{ |cmd| match(cmd) }
   end
 end
 
